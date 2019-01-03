@@ -1,0 +1,371 @@
+Name: Sayed Ebrahim Mustafa Alawi
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+#importing packages to use
+
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+#this data is from kaggle 
+df = read.csv('googleplaystore.csv')
+```
+
+>This dataset is from kaggle and it is a dataset about the applications 
+available on the google app store.
+
+# Univariate Plots Section
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_Plots}
+#dimensions of the data frame
+head(df)
+dim(df)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Summarise the different Variables so we have an idea of what we're working with
+summary(df)
+```
+>In this dataset there are 10841 observation and 13 variables.
+
+###Categories
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#plotting a bar graph for categories
+
+df = subset(df, Category != '1.9')
+
+
+ggplot(aes(x = Category), data = df)+
+  geom_bar()+
+  coord_flip()+
+  ggtitle("Categories")
+
+
+```
+
+> There are more family applications on google apps then any other category 
+followed by health and fitness apps. There are less than 500 application for
+most of the categories on the list.
+
+###Installs
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#plotting a bar graph for level of installs.
+
+df = subset(df, df$Installs != 'Free')
+ggplot(aes(x = Installs), data = df )+
+  geom_bar()+
+  coord_flip()
+
+
+```
+
+###Rating
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#A histogram for the distribution of ratings in the google play dataset
+med = median(subset(df$Rating, df$Rating >= 0.01))
+
+ggplot(aes(x = Rating), data = df )+
+  geom_histogram(binwidth = 0.1)+
+  xlim(1,5)+ 
+  geom_vline(xintercept = med, col = 'red')
+
+summary(df$Rating)
+```
+
+>The ratings of the apps on the app store follows a left skewed distribution.
+most apps are rated above 4.0 and about half are rated between 4.3 and 5.
+
+###Genres
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#Plotting the most popular Genres
+
+#group the genres to find which ones are the most popular 
+topgenres = group_by(df, Genres)%>%
+  summarise(n = n())%>%
+  arrange(desc(n))
+
+#removing the rows that are not the most popular category
+#I am going to use this variable again in my bivariate analysis
+topgenres = head(topgenres,15)
+mask= df$Genres %in% topgenres$Genres
+topgenres = df[mask,]
+
+#simple bar plot
+ggplot(aes(x = Genres), data = topgenres)+
+  geom_bar()+
+  coord_flip()
+
+```
+
+###Type
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#There are two types paid and unpaid
+d = subset(df, (Type == 'Free' | Type == 'Paid'))
+
+ggplot(aes(x = Type), data = d )+
+  geom_bar()
+```
+
+>There are a lot more free apps in the app store than paid apps. But we need 
+to keep in mind that some of these free apps have in app purchases or they are
+free to download but not to use.
+
+###Content Rating
+
+```{r echo= FALSE,message=FALSE, warning=FALSE}
+#simple bar plot
+ggplot(aes(x = Content.Rating), data = df)+
+  geom_bar()+
+  coord_flip()+
+  scale_y_log10()
+```
+
+>Most apps are suitable for people under the age of 18, with the apps that have 
+an E rating more than all the other categories combined.
+
+###Reviews
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#change the reviews column into a column of numbers
+df$Reviews = as.numeric(df$Reviews)
+ggplot(aes(x = Reviews), data = df)+
+  geom_histogram()+
+  scale_x_log10()+
+  geom_vline(xintercept = median(df$Reviews), color = 'red')
+```
+
+###Size
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#cleaning up the column to turn it into a form that we can use
+dfx = subset(df, Size != 'Varies with device')
+#convert all sizes to M and have them be numerical so we can run operations on 
+#them
+condition = grepl('M', dfx$Size)
+if_true = as.numeric(gsub("[a-zA-Z ]", "" , dfx$Size))
+if_false = as.numeric(gsub("[a-zA-Z ]", "", dfx$Size))/1024
+
+dfx$Size = ifelse(condition == TRUE, if_true,if_false)
+
+# a simple plot
+ggplot(aes(x = round(Size)), data = dfx)+
+  geom_histogram(fun.y = count, geom ='line' )+
+  geom_vline(xintercept = median(subset(dfx,!is.na(dfx$Size))$Size), col = 'red')+
+  geom_vline(xintercept = mean(subset(dfx,!is.na(dfx$Size))$Size), col = 'blue')
+  scale_y_log10()
+  
+  summary(dfx$Size)
+```
+
+> (The blue line is the mean and the red is the median). The average 
+
+###Price
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+df$price = as.numeric(gsub("\\$", "", df$Price))
+summary(subset(df, price != 0)$price)
+
+ggplot(aes(x = price), data = subset(df, price != 0))+
+  geom_histogram()
+
+ggplot(aes(x = price), data = subset(df, price != 0 & price <= 10))+
+  geom_histogram(binwidth = 0.1)
+```
+
+>Most apps are under 10$ with some prices point being more frequent than others;
+(0.99,1.99 etc.)
+
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+>In this dataset there is infortmation about 10841 apps that are available in 
+the google app store and 13 columns. 
+
+>About some of the columns:
+
+>Type - Free or paid
+
+>Categories - There are 33 different Categories (once you remove 1.9)
+
+>Installs- There are 21 different levels for installs that tell us how many times
+>the app has been installed. The levels are not evenly spaced. (once you remove
+free)
+
+>Rating - The apps can be rated from 1-5
+
+>Genres - There are 120 different Genres
+
+
+>Content.Rating - An application can be given 5 different content rating;
+Teen, Mature 17+, Everyone 10+, Everyone, Adults only 18+. Some of the 
+applications are not rated
+
+
+
+>The columns in our dataset - Category, Installs, Type, Content.Rating, 
+Genres, current.ver, Android.ver., last.updated, Apps ,Rating, Reviews, size and 
+price.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+> Rating is my main feature of interest in this dataset. I would like to see how
+the different features affect the rating.
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?
+
+>I suspect that Genres, Category, Type, and Price affect the rating,
+
+### Did you create any new variables from existing variables in the dataset?
+>I have, only to use them temporarily to show a cleaner more relevant plot.
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?
+>
+
+
+# Bivariate Plots Section
+
+#Rating
+
+```{r echo=FALSE, Bivariate_Plots}
+
+ggplot(aes(x = Rating , y = price ), data = subset(df, Type == 'Paid'))+
+  geom_point()+
+  ylim(0,50)
+
+summary(subset(df, Type == 'Paid')$Rating)
+```
+
+>Rating statistics for free apps
+
+```{r}
+summary(subset(df, Type == 'Free')$Rating)
+```
+
+
+>Paid apps are slightly better rated than free apps.
+
+
+```{r}
+
+ggplot(aes(x =Rating , y =Size ), data = dfx)+
+  geom_point()
+
+```
+
+```{r}
+#plot the average rating for each category
+dfcat <- subset(df, !is.na(Rating))
+dfcat <- dfcat%>%
+  group_by(Category)%>%
+  summarise(Rating = mean(as.numeric(Rating)))
+
+#plot
+ggplot(aes(x = Category, y = Rating), data = dfcat)+
+  geom_bar(stat="identity", position="dodge")+
+  coord_flip(ylim = c(3.8,4.5))
+  
+```
+
+>Dating apps have the lowest average rating and family apps have the most 
+average rating
+
+
+# Bivariate Analysis
+
+> **Tip**: As before, summarize what you found in your bivariate explorations
+here. Use the questions below to guide your discussion.
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?
+
+### What was the strongest relationship you found?
+
+
+# Multivariate Plots Section
+
+> **Tip**: Now it's time to put everything together. Based on what you found in
+the bivariate plots section, create a few multivariate plots to investigate
+more complex interactions between variables. Make sure that the plots that you
+create here are justified by the plots you explored in the previous section. If
+you plan on creating any mathematical models, this is the section where you
+will do that.
+
+```{r echo=FALSE, Multivariate_Plots}
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+> **Tip**: You've done a lot of exploration and have built up an understanding
+of the structure of and relationships between the variables in your dataset.
+Here, you will select three plots from all of your previous exploration to
+present here as a summary of some of your most interesting findings. Make sure
+that you have refined your selected plots for good titling, axis labels (with
+units), and good aesthetic choices (e.g. color, transparency). After each plot,
+make sure you justify why you chose each plot by describing what it shows.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+```
+
+### Description One
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+```
+
+### Description Two
+
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+```
+
+### Description Three
+
+------
+
+# Reflection
+
+> **Tip**: Here's the final step! Reflect on the exploration you performed and
+the insights you found. What were some of the struggles that you went through?
+What went well? What was surprising? Make sure you include an insight into
+future work that could be done with the dataset.
+
+> **Tip**: Don't forget to remove this, and the other **Tip** sections before
+saving your final work and knitting the final report!

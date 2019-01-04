@@ -3,17 +3,16 @@ Name: Sayed Ebrahim Mustafa Alawi
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
 #importing packages to use
-
 library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(gridExtra)
-library(forcats)
+
 ```
 
 ```{r echo=FALSE, Load_the_Data}
 # Load the Data
-#this data is from kaggle 
+#This dataset is from kaggle 
 df = read.csv('googleplaystore.csv')
 ```
 
@@ -23,8 +22,9 @@ available on the google app store.
 # Univariate Plots Section
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_Plots}
-#dimensions of the data frame
+#first 5 rows of the dataframe
 head(df)
+#dimensions of the data frame
 dim(df)
 ```
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -33,55 +33,54 @@ summary(df)
 ```
 In this dataset there are 10841 observation and 13 variables.
 
-###Categories
+###Category
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
-#plotting a bar graph for categories
-
+#removing the 1.9 category
 df = subset(df, Category != '1.9')
 
-
+#plotting a bar graph for categories
 ggplot(aes(x = Category), data = df)+
-  geom_bar(fill = 'violetred2')+
+  geom_bar(fill = 'royalblue2')+
   coord_flip()+
   ggtitle("Categories")
 
-
 ```
 
-There are more family applications on google apps than any other category 
-followed by health and fitness apps. There are less than 500 applications for
-most of the categories on the list.
+There are more applications in the Family Category than any other Category 
+followed by the game and tools categories. There are less than 500 applications 
+for most of the categories on the list.
 
 ###Price
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#clean the price feature so I can use it as a float
 df$price = as.numeric(gsub("\\$", "", df$Price))
-summary(subset(df, price != 0)$price)
 
-ggplot(aes(x = price), data = subset(df, price != 0))+
-  geom_histogram()
-
-ggplot(aes(x = price), data = subset(df, price != 0 & price <= 10))+
-  geom_histogram(binwidth = 0.1)
+ggplot(aes(x = price), data = df)+
+  geom_histogram(fill = 'royalblue2', binwidth = 3)+
+  scale_y_log10()+
+  ggtitle('Price')
 ```
 
-Most apps are under 10$ with some prices point being more frequent than others;
-(0.99,1.99 etc.)
-
+Most apps do not cost a thing and we find that there are outliers around the 
+400 dollar mark.
 
 ###Installs
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
-#plotting a bar graph for level of installs.
-
+#Cleaning the installs column
 df = subset(df, df$Installs != 'Free')
+
+#plotting a bar graph for level of installs.
 ggplot(aes(x = Installs), data = df )+
   geom_bar(fill = 'violetred2')+
-  coord_flip()
-
-
+  coord_flip()+
+  ggtitle('Installs')
 ```
+
+The level with the most number of installs is 1000,000+, which is 1-5 million. 
+The install levels range increases exponentially.
 
 ###Rating
 
@@ -89,43 +88,45 @@ ggplot(aes(x = Installs), data = df )+
 #A histogram for the distribution of ratings in the google play dataset
 med = median(subset(df$Rating, df$Rating >= 0.01))
 
+#Histogram
 ggplot(aes(x = Rating), data = df )+
-  geom_histogram(binwidth = 0.1, fill = 'salmon3')+
+  geom_histogram(binwidth = 0.1, fill = 'violetred2')+
   xlim(1,5)+ 
-  geom_vline(xintercept = med, col = 'red')
+  geom_vline(xintercept = med, col = 'blue')+
+  ggtitle('Rating')
 
 summary(df$Rating)
 ```
 
-The ratings of the apps on the app store follows a left skewed distribution.
+The ratings of the apps in the app store follows a left skewed distribution.
 most apps are rated above 4.0 and about half are rated between 4.3 and 5.
-
+(blue line is the median)
 
 
 ###Type
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
 #There are two types paid and unpaid
-d = subset(df, (Type == 'Free' | Type == 'Paid'))
+df_type = subset(df, (Type == 'Free' | Type == 'Paid'))
 
-temp <- d%>%
+temp <- df_type%>%
   group_by(Type)%>%
   summarise(n = n())
-  
+
 #pie chart
 ggplot(aes(x = '', y = n, fill = Type), data = temp )+
   geom_bar(stat = 'identity')+
   coord_polar('y', start = 0)+
-  theme_void()
+  theme_void()+
+  ggtitle('Type')
 
 
 ```
 
 There are a lot more free apps in the app store than paid apps. But we need 
-to keep in mind that some of these free apps have in app purchases or they are
-free to download but not to use.
+to keep in mind that some of these free apps have in app purchases.
 
-####Android Version
+###Android Version
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #creating a tempory dataset
@@ -133,65 +134,85 @@ temp <-df%>%
   group_by(Android.Ver)%>%
   summarise(n = n())
 
+
 ver_df<-subset(temp, (Android.Ver != 'NaN' & n >10))
 
+#bar plot
 ggplot(aes(x = Android.Ver, y = n), data = ver_df)+
-geom_bar(stat = 'identity', fill = 'springgreen3')+
-coord_flip()
+geom_bar(stat = 'identity', fill = 'royalblue2')+
+coord_flip()+
+ylab('count')+
+xlab('Version Of Android')+
+ggtitle('Android Version')
 
 ```
 
 The more recent your version of android is the more apps you will be able to
-download and use.
+download and use. Some applications require different version of android to 
+install depending on your device.
 
 ###Content Rating
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
 #simple bar plot
 ggplot(aes(x = Content.Rating), data = df)+
-  geom_bar()+
+  geom_bar(fill = 'royalblue2')+
   coord_flip()+
-  scale_y_log10()
+  scale_y_log10()+
+  ggtitle('Content Rating')
 ```
 
-Most apps are suitable for people under the age of 18, with the apps that have 
-an E rating more than all the other categories combined.
+Most apps are suitable for people under the age of 18. The number of 
+applications that are rated for everybody are more than all the other content 
+rating combined.
 
 ###Reviews
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #change the reviews column into a column of numbers
 df$Reviews = as.numeric(df$Reviews)
+
+#Histogram
 ggplot(aes(x = Reviews), data = df)+
-  geom_histogram()+
+  geom_histogram(fill = 'violetred2')+
   scale_x_log10()+
-  geom_vline(xintercept = median(df$Reviews), color = 'red')
+  geom_vline(xintercept = median(df$Reviews), color = 'blue')+
+  ggtitle('Reviews')
+
+#summary
+summary(df$Reviews)
 ```
+
+The numbner of reviews follows a left skewed distribution. About half the apps 
+have more than 2747 reviews.(blue line is the median)
 
 ###Size
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #cleaning up the column to turn it into a form that we can use
-dfx = subset(df, Size != 'Varies with device')
+df_size = subset(df, Size != 'Varies with device')
+
 #convert all sizes to M and have them be numerical so we can run operations on 
 #them
-condition = grepl('M', dfx$Size)
-if_true = as.numeric(gsub("[a-zA-Z ]", "" , dfx$Size))
-if_false = as.numeric(gsub("[a-zA-Z ]", "", dfx$Size))/1024
+condition = grepl('M', df_size$Size)
+if_true = as.numeric(gsub("[a-zA-Z ]", "" , df_size$Size))
+if_false = as.numeric(gsub("[a-zA-Z ]", "", df_size$Size))/1024
 
-dfx$Size = ifelse(condition == TRUE, if_true,if_false)
+df_size$Size = ifelse(condition == TRUE, if_true,if_false)
 
 # a simple plot
-ggplot(aes(x = round(Size)), data = dfx)+
-  geom_histogram(fun.y = count, geom ='line' )+
-  geom_vline(xintercept = median(subset(dfx,!is.na(dfx$Size))$Size), col = 'red')+
-  geom_vline(xintercept = mean(subset(dfx,!is.na(dfx$Size))$Size), col = 'blue')
-  scale_y_log10()
+ggplot(aes(x = round(Size)), data = df_size)+
+  geom_histogram(fun.y = count, geom ='line', fill = 'violetred2')+
+  geom_vline(xintercept = median(subset(df_size,!is.na(df_size$Size))$Size), col = 'red')+
+  geom_vline(xintercept = mean(subset(df_size,!is.na(df_size$Size))$Size), col = 'blue')+
+  ggtitle('Size')+
+  xlab('Size')
   
   
 ```
 
-(The blue line is the mean and the red is the median). The average 
+The size of the applications follows a right skewed distribution.
+(The blue line is the mean and the red is the median). 
 
 
 ###Genres
@@ -213,7 +234,8 @@ topgenres = df[mask,]
 #simple bar plot
 ggplot(aes(x = Genres), data = topgenres)+
   geom_bar(fill = 'violetred2')+
-  coord_flip()
+  coord_flip()+
+  ggtitle('Genres')
 
 ```
 
@@ -221,95 +243,123 @@ ggplot(aes(x = Genres), data = topgenres)+
 
 ### What is the structure of your dataset?
 
->In this dataset there is infortmation about 10841 apps that are available in 
-the google app store and 13 columns. 
+In this dataset there is infortmation about 10841 apps that are available in 
+the google app store and 13 features. 
 
->About some of the columns:
+About some of the columns:
 
 Type - Free or paid
-
 Categories - There are 33 different Categories (once you remove 1.9)
 
 Installs- There are 21 different levels for installs that tell us how many times
-the app has been installed. The levels are not evenly spaced. (once you remove
-free)
+the app has been installed. 
 
 Rating - The apps can be rated from 1-5
 
 Genres - There are 120 different Genres
 
-
-Content.Rating - An application can be given 5 different content rating;
-Teen, Mature 17+, Everyone 10+, Everyone, Adults only 18+. Some of the 
+Content.Rating - An application can be given 5 different content ratings;
+Teen, Mature (17+), Everyone (10+), Everyone, Adults only (18+). Some of the 
 applications are not rated
 
 
-
->The columns in our dataset - Category, Installs, Type, Content.Rating, 
-Genres, current.ver, Android.ver., last.updated, Apps ,Rating, Reviews, size and 
-price.
+The different features in our dataset - Category, Installs, Type, 
+Content.Rating, Genres, current.ver, Android.ver., last.updated, Apps ,Rating,
+Reviews, size and price.
 
 ### What is/are the main feature(s) of interest in your dataset?
 
-> Rating is my main feature of interest in this dataset. I would like to see how
-the different features affect the rating.
+Rating and price are my main features of interest in this dataset.
 
 ### What other features in the dataset do you think will help support your \
 investigation into your feature(s) of interest?
 
->I suspect that Genres, Category, Type, and Price affect the rating,
+I would like to see if the Genre, Category, Reviews, Rating and type affect the 
+price and rating.
 
 ### Did you create any new variables from existing variables in the dataset?
->I have, only to use them temporarily to show a cleaner more relevant plot.
+I have.
 
 ### Of the features you investigated, were there any unusual distributions? \
 Did you perform any operations on the data to tidy, adjust, or change the form \
 of the data? If so, why did you do this?
->
+I changed the price feature from a column of strings to a column of floats.
+I changed the size feature in the same way and manipulated it in a way that 
+all the values share the same unit.
 
 
 # Bivariate Plots Section
 
-#The relationship between rating and other features.
+##The relationship between rating and other features.
 
+###Rating vs. Reviews
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot of rating vs reviews
 ggplot(aes(x =Rating, y=Reviews), data = df)+
-  geom_jitter(alpha = 0.06)+
+  geom_jitter(alpha = 0.06, color = 'royalblue2')+
   geom_line(stat = 'summary', fun.y = mean)+
-  geom_smooth(method = 'lm')
+  geom_smooth(method = 'lm')+
+  ggtitle('Review vs Rating')
 ```
 
+The variability of the rating of an application is not explained by the number 
+of reviews.
 
-```{r echo= FALSE, message=FALSE, warning=FALSE, Bivariate_Plots}
-
-ggplot(aes(x = Rating , y = price ), data = subset(df, Type == 'Paid'))+
-  geom_jitter(alpha = 0.3)+
-  ylim(0,25)+
-  geom_line(stat = 'summary', fun.y = mean)+
-  geom_smooth(method = 'lm')
-
-summary(subset(df, Type == 'Paid')$Rating)
-```
-
->Rating statistics for free apps
+###Rating vs. Installs
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x =Installs , y =Rating ), data = df)+
+  geom_boxplot(fill = 'violetred2')+
+  coord_flip()+
+  ggtitle('Rating vs. Installs')
+
+```
+
+We can see that the median rating will be above 4 no matter how many times an
+app was installed.
+
+###Rating vs. Price
+```{r echo= FALSE, message=FALSE, warning=FALSE, Bivariate_Plots}
+#plot of rating vs. price
+ggplot(aes(x = Rating , y = price), data = df)+
+  geom_jitter(alpha = 0.3, color = 'royalblue1')+
+  ylim(0,25)+
+  geom_line(stat = 'summary', fun.y = mean)
+```
+
+Here we see that the mean price is very close to 0 this is because most of the
+apps are free. To get a better understanding of the relationship between rating
+and price we need to filter by type.
+
+###Rating vs. Type
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot for rating vs. type
+ggplot(aes(x = Type, y = Rating), data = df_type )+
+  geom_boxplot(fill = 'violetred2' )
+#summary for the paid
+summary(subset(df, Type == 'Paid')$Rating)
+#summary
 summary(subset(df, Type == 'Free')$Rating)
 ```
 
+Paid apps are slightly better rated than free apps. 
 
->Paid apps are slightly better rated than free apps.
-
-
+###Rating and Size
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes(x =Rating , y =Size ), data = dfx)+
+# Use the df_size dataframe we created in the univariate analysis section
+#to plot the relationship between rating and size
+ggplot(aes(x =Rating , y =Size ), data = df_size)+
   geom_jitter(alpha = 0.05)+
   geom_smooth(method = 'lm')+
   geom_line(stat = 'summary', fun.y = mean)
 
-cor.test(dfx$Rating,dfx$Size)
+#correlation between rating and size
+cor.test(df_size$Rating,df_size$Size)
 ```
+
+The size of an application does not affect the rating. Users are not bothered
+by large app sizes.
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #plot the average rating for each category
@@ -323,10 +373,12 @@ ggplot(aes(x = Category, y = Rating), data = dfcat)+
   geom_bar(stat="identity", position="dodge")+
   coord_flip(ylim = c(3.8,4.5))
   
+ggplot(aes(x = Category, y = Rating), data = df)+
+  geom_boxplot()+coord_flip()
 ```
 
 >Dating apps have the lowest average rating and family apps have the most 
-average rating
+average rating.
 
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
@@ -501,6 +553,17 @@ there is an entertainment category. We see the same thing with the education
 genre; most of the apps in the education genre are under the family category
 although there is a category for educational apps.
 
+##The relationship between Category and type
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x= Category), data = df)+
+  geom_bar(aes(fill = Type))+
+  coord_flip()
+
+```
+
+
 ##The relationship between the most frequent Genres and price
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
@@ -516,13 +579,13 @@ that most of the tools are under 10$.
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #simple plot of price*size
-ggplot(aes(x = price, y = Size), data = subset(dfx, Type == 'Paid'))+
+ggplot(aes(x = price, y = Size), data = subset(df_size, Type == 'Paid'))+
   geom_jitter(alpha = 0.1)+
   xlim(0,100)+
   geom_smooth(method = 'lm')
 
 #temporary dataset where the type is paid and without the 'troll' apps
-temp <- subset(dfx, Type == 'Paid' & price <300)
+temp <- subset(df_size, Type == 'Paid' & price <300)
 
 #correlation
 cor.test(temp$price, temp$Size)
@@ -637,9 +700,16 @@ will do that.
 
 ```{r echo=FALSE, Multivariate_Plots}
 
+ggplot(aes(x = Reviews, y = price), data = subset(df, Type = 'Paid'))+
+  geom_jitter(aes(color = Android.Ver))+
+  theme(legend.position = 'None')+
+  ylim(0,50)
+
 ```
 
 # Multivariate Analysis
+
+
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. Were there features that strengthened each other in terms of \

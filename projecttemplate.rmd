@@ -33,6 +33,21 @@ summary(df)
 ```
 In this dataset there are 10841 observation and 13 variables.
 
+###Price
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#clean the Price feature so I can use it as a float
+df$Price = as.numeric(gsub("\\$", "", df$Price))
+
+ggplot(aes(x = Price), data = df)+
+  geom_histogram(fill = 'royalblue2', binwidth = 3)+
+  scale_y_log10()+
+  ggtitle('Price')
+```
+
+Most apps do not cost a thing and we find that there are outliers around the 
+400 dollar mark.
+
 ###Category
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
@@ -51,20 +66,7 @@ There are more applications in the Family Category than any other Category
 followed by the game and tools categories. There are less than 500 applications 
 for most of the categories on the list.
 
-###Price
 
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-#clean the price feature so I can use it as a float
-df$price = as.numeric(gsub("\\$", "", df$Price))
-
-ggplot(aes(x = price), data = df)+
-  geom_histogram(fill = 'royalblue2', binwidth = 3)+
-  scale_y_log10()+
-  ggtitle('Price')
-```
-
-Most apps do not cost a thing and we find that there are outliers around the 
-400 dollar mark.
 
 ###Installs
 
@@ -134,7 +136,7 @@ temp <-df%>%
   group_by(Android.Ver)%>%
   summarise(n = n())
 
-
+#Android.Ver level with more than 10 apps having that level
 ver_df<-subset(temp, (Android.Ver != 'NaN' & n >10))
 
 #bar plot
@@ -259,6 +261,8 @@ Rating - The apps can be rated from 1-5
 
 Genres - There are 120 different Genres
 
+Android.Ver - the different versions of android
+
 Content.Rating - An application can be given 5 different content ratings;
 Teen, Mature (17+), Everyone (10+), Everyone, Adults only (18+). Some of the 
 applications are not rated
@@ -266,25 +270,29 @@ applications are not rated
 
 The different features in our dataset - Category, Installs, Type, 
 Content.Rating, Genres, current.ver, Android.ver., last.updated, Apps ,Rating,
-Reviews, size and price.
+Reviews, size and Price.
 
 ### What is/are the main feature(s) of interest in your dataset?
 
-Rating and price are my main features of interest in this dataset.
+Rating and Price are my main features of interest in this dataset.
 
 ### What other features in the dataset do you think will help support your \
 investigation into your feature(s) of interest?
 
 I would like to see if the Genre, Category, Reviews, Rating and type affect the 
-price and rating.
+Price and rating.
 
 ### Did you create any new variables from existing variables in the dataset?
-I have.
+
+ver_df- queries the df for atleast 10 isntances of a level of android.ver
+df_size- Clean the size feature for use and removes all rows were size is
+unspecified
+topgenres- decreases the no. of genres from 120 to the 15 most frequent
 
 ### Of the features you investigated, were there any unusual distributions? \
 Did you perform any operations on the data to tidy, adjust, or change the form \
 of the data? If so, why did you do this?
-I changed the price feature from a column of strings to a column of floats.
+I changed the Price feature from a column of strings to a column of floats.
 I changed the size feature in the same way and manipulated it in a way that 
 all the values share the same unit.
 
@@ -321,8 +329,8 @@ app was installed.
 
 ###Rating vs. Price
 ```{r echo= FALSE, message=FALSE, warning=FALSE, Bivariate_Plots}
-#plot of rating vs. price
-ggplot(aes(x = Rating , y = price), data = df)+
+#plot of rating vs. Price
+ggplot(aes(x = Rating , y = Price), data = df)+
   geom_jitter(alpha = 0.3, color = 'royalblue1')+
   ylim(0,25)+
   geom_line(stat = 'summary', fun.y = mean)+
@@ -330,9 +338,9 @@ ggplot(aes(x = Rating , y = price), data = df)+
 ```
 
 
-Here we see that the mean price is very close to 0 this is because most of the
+Here we see that the mean Price is very close to 0 this is because most of the
 apps are free. To get a better understanding of the relationship between rating
-and price we need to filter by type we're going to do this in the multivariate
+and Price we need to filter by type we're going to do this in the multivariate
 section with type as the third variable.
 
 
@@ -364,8 +372,7 @@ ggplot(aes(x =Rating , y =Size ), data = df_size)+
 cor.test(df_size$Rating,df_size$Size)
 ```
 
-The size of an application does not affect the rating. Users are not bothered
-by large app sizes.
+The larger the size of the application the better rated it is.
 
 ### Rating vs. Category
 
@@ -588,14 +595,13 @@ Everyone.
 
 In my bivariate analysis I found that the rating of an application is not 
 strongly coorelated to any feature in the dataset. I am going to have to work
-on the price in the multivarite section in order to inclue type.
+on the Price in the multivarite section in order to inclue type.
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \
 the dataset?
 
--Paid apps are better rated than free apps.
--
+-Paid apps are slightly better rated than free apps.
 
 ### Did you observe any interesting relationships between the other features \
 
@@ -604,31 +610,47 @@ The Family and games categories have different genres.
 ### What was the strongest relationship you found?
 
 All the relationships between quantitative variables were pretty weak. (<0.3)
+It seems that the size, no. of reviews, category and genre don't really affect
+the rating. Which is a good thing because that means that the quality of the
+app is the only thing that matters. I am going to explore this further in 
+the multivariate plots section.
+
 
 # Multivariate Plots Section
 
-##The relationship between price and Type with other Features
 
+###Installs vs. Reviews with Android version
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#Android.ver with more than 1000 applications
+ver_df2 = subset(ver_df, n >1000)
 
-paidapp = subset(df, Type == 'Paid')
-
-ggplot(aes(x =Category , y =price ), data = df)+
-  geom_point(alpha = 0.2, color = 'royalblue1')+
-  coord_flip(ylim = c(0, quantile(paidapp$price,0.95)))
-
+#plot of installs vs reviews with the color as android.ver
+ggplot(aes(x= Installs, y = Reviews), data = subset(df, df$Android.Ver %in% ver_df2$Android.Ver))+
+  geom_jitter(aes(color = Android.Ver), alpha = 0.5)+
+  coord_flip()+
+  ggtitle('Installs vs. Reviews')
 ```
 
+we see here that the applications that are for android version of 4.1 and up
+are more frequent for certain no. of reviews.
 
+
+###The relationship between Price and Type with other Features
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-paidappc <-paidapp%>%
-  group_by(Category)%>%
-  summarise(mean_price = mean(price), n = n(), median_price = median(price))
+#subsetting for Type
+paidapp <- subset(df, Type == "Paid")
 
-ggplot(aes(x =Category, y =mean_price ), data = paidappc)+
+#group the apps so we can get the mean, median and number of the price
+paidappgroup <- paidapp%>%
+  group_by(Category)%>%
+  summarise(mean_Price = mean(Price), n = n(), median_Price = median(Price))
+
+#Category vs mean_price
+ggplot(aes(x =Category, y =mean_Price ), data = paidappgroup)+
   geom_bar(stat = 'identity', position = 'dodge', fill = 'royalblue1')+
   coord_flip()+
-  geom_text(aes(label = n), hjust=-0.1)
+  geom_text(aes(label = n), hjust=-0.1)+
+  ggtitle('Category vs. mnean price')
 
 ```
 
@@ -637,40 +659,49 @@ applications in that category
 
 When we look at the bar plot above we see that finance applications are the 
 most expensive applications on the google app store. I want to explore this 
-further I am going to now plot the median price for all the categories and a 
-point plot with the price on a logarithmic scale to get a better idea of what
+further I am going to now plot the median Price for all the categories and a 
+point plot with the Price on a logarithmic scale to get a better idea of what
 is happening.
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
- ggplot(aes(y = median_price, x = Category ), data = paidappc)+
-  geom_bar(stat = 'identity', fill = 'royalblue1')+
+#The relationshup between the median price and category
+ggplot(aes(x =Category, y = median_Price ), data = paidappgroup)+
+  geom_bar(stat = 'identity', position = 'dodge', fill = 'tomato')+
   coord_flip()+
-  geom_text(aes(label = n), hjust = -0.1)
+  geom_text(aes(label = n), hjust=-0.1)+
+  ggtitle('Median price vs Category')
 
-ggplot(aes(y = price, x = Category), data = paidapp)+
-  geom_point(alpha = 0.2)+
+#the relationship between price and category when accounting for the type
+ggplot(aes(y = Price, x = Category), data = paidapp)+
+  geom_point(alpha = 0.2, color = 'tomato')+
   coord_flip()+
-  scale_y_log10()
+  scale_y_log10()+
+  ggtitle('Price vs. Category')
 
+#Check the most expensive apps in the finance category
 temp <- head(subset(df, Category == 'FINANCE' & Type == 'Paid'))%>%
-  select(App, Category, price, Genres)
+  select(App, Category, Price, Genres)
 
-temp[order(temp$price, decreasing = TRUE),]%>%
+outliers <- temp[order(temp$Price, decreasing = TRUE),]%>%
   head(5)
+
+outliers
 ```
 
 I found that this is due to the apps that were meant to show off wealth if 
 we were to not count these apps as part of our statistic; if we were to assume
 that they do not have a practical purpose and were not meant to be taken 
-seriously this will lead us to the conclusion that the mean/median price is  
+seriously this will lead us to the conclusion that the mean/median Price is  
 a lot lower.
 
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#Check the most expensive apps in the lifestyle category
 temp <- subset(df, Category == 'LIFESTYLE' & Type == 'Paid')%>%
-  select(App, Category, price, Genres)
+  select(App, Category, Price, Genres)
 
-temp[order(temp$price, decreasing = TRUE),]%>%
+#
+temp[order(temp$Price, decreasing = TRUE),]%>%
   head(5)
 
 ```
@@ -679,8 +710,9 @@ In the lifestyle category we see that these same sort of applications is
 distorting our statistic.
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#check the app in the events category
 subset(df, Category == 'EVENTS' & Type == 'Paid')%>%
-  select(App,Category,price, Genres)
+  select(App,Category,Price, Genres)
 
 ```
 
@@ -690,63 +722,80 @@ inspect the point plot we would see that on average the medical apps are
 actually more expensive on average.
 
 
+###Mean/Median price (Type is Paid) of a category once we account for outliers
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#let us now calculate the median and mean price after we account for some of the 
+#outliers
+paidappgroup_2 <- subset(paidapp, Price < 200)%>%
+  group_by(Category)%>%
+  summarise(mean = mean(Price), median = median(Price), n = n())
 
-ggplot(aes(x = Installs, y = price), data = subset(df, Type == 'Paid') )+
-  geom_jitter(alpha = 0.1)+
+#mean_price
+ggplot(aes(x =Category, y =mean ), data =  subset(paidappgroup_2, mean < 100))+
+  geom_bar(stat = 'identity', position = 'dodge', fill = 'royalblue1')+
   coord_flip()+
-  ggtitle('Installs vs. Type')
+  geom_text(aes(label = n), hjust=-0.1)+
+  ggtitle('Category vs. mean price')
 
+#median_price
+ggplot(aes(x =Category, y =median ), data = subset(paidappgroup_2, median < 100))+
+  geom_bar(stat = 'identity', position = 'dodge', fill = 'royalblue1')+
+  coord_flip()+
+  geom_text(aes(label = n), hjust=-0.1)+
+  ggtitle('Category vs. median price')
 ```
 
+Once we account for outliers, we can see based on the mean and median plots for
+the price of each category that the medical apps are actually the most
+expensive.
+
+
+##The relationship between Price and other features once you account for type
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#Installs vs. Price
+ggplot(aes(x = Installs, y = Price), data = subset(df, Type == 'Paid'))+
+  geom_jitter(alpha = 0.1, , color = 'tomato')+
+  coord_flip(ylim = c(0,50))+
+  ggtitle('Installs vs. Price')
+
+
+```
 
 The cheaper the app the more likely it will be downloaded and installed.
 
 
-```{r echo=FALSE, Multivariate_Plots}
-
-ggplot(aes(x = Reviews, y = price), data = subset(df, Type = 'Paid'))+
-  geom_jitter(aes(color = Android.Ver))+
-  theme(legend.position = 'None')+
-  ylim(0,50)
-
-```
-
-
-##The relationship between price and other features
-
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-ggplot(aes(x= Genres, y = price), data = subset(topgenres, Type =='Paid'))+
-  geom_jitter(stat = 'identity', alpha = 0.5, aes(color = Reviews))+
-  coord_flip(ylim = c(0,50))
-```
+temp <- subset(df_size, Type == 'Paid' & Price <100)
 
-Here we see that the most expensive apps are in the medical genre we also see 
-that most of the tools are under 10$.
-
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-#simple plot of price*size
-ggplot(aes(x = price, y = Size), data = subset(df_size, Type == 'Paid'))+
-  geom_jitter(alpha = 0.1)+
+#simple plot of Price*size
+ggplot(aes(x = Price, y = Size), data = temp)+
+  geom_jitter(alpha = 0.1, color = 'tomato')+
+  geom_smooth(method = 'lm')+
   xlim(0,100)+
-  geom_smooth(method = 'lm')
+  coord_cartesian(ylim = c(0,50))+
+  ggtitle('price vs. size')
 
 #temporary dataset where the type is paid and without the 'troll' apps
-temp <- subset(df_size, Type == 'Paid' & price <300)
+
 
 #correlation
-cor.test(temp$price, temp$Size)
+cor.test(temp$Price, temp$Size)
 ```
+There is a slight positive correlation between price and size once you account for outliers
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#temporary variable for the graph and correlation
+temp <- subset(df, Type == 'Paid' & Price < 200)
 
-ggplot(aes(x = Reviews, y = price), data = subset(df, Type == 'Paid'))+
-  geom_point()+
+#price vs. reviews
+ggplot(aes(x = Reviews, y = Price), data = temp)+
+  geom_point(color = 'tomato')+
   geom_smooth()+
-  scale_y_log10()
+  coord_cartesian(ylim = c(0,25))
 
-cor.test(df$Reviews, df$price)
+#coorelation
+cor.test(temp$Reviews, temp$Price)
 ```
 
 # Multivariate Analysis
@@ -756,54 +805,99 @@ cor.test(df$Reviews, df$price)
 investigation. Were there features that strengthened each other in terms of \
 looking at your feature(s) of interest?
 
+In this section I looked at the price with the type of paid and it's 
+relationship with other factors.
+
 ### Were there any interesting or surprising interactions between features?
 
-### OPTIONAL: Did you create any models with your dataset? Discuss the \
-strengths and limitations of your model.
+I was disappointed that there were not any statistically signifcant correlations
+between price and other features in the dataset. I was surprised by the 
+interaction between installs and reviews especially after I accounted for
+android.var. I was unsure why there were certain clusters of the no. of reviews
+for apps that supoort andriod of version 4.1 and up
 
 ------
 
 # Final Plots and Summary
 
-> **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
-Here, you will select three plots from all of your previous exploration to
-present here as a summary of some of your most interesting findings. Make sure
-that you have refined your selected plots for good titling, axis labels (with
-units), and good aesthetic choices (e.g. color, transparency). After each plot,
-make sure you justify why you chose each plot by describing what it shows.
-
 ### Plot One
 ```{r echo=FALSE, Plot_One}
-
+#median_price
+ggplot(aes(x =Category, y =median ), data = subset(paidappgroup_2, median < 100))+
+  geom_bar(stat = 'identity', position = 'dodge', fill = 'royalblue1')+
+  coord_flip()+
+  geom_text(aes(label = n), hjust=-0.1)+
+  ggtitle('Category vs. median price')+
+  ylab('Median Price')
 ```
 
 ### Description One
+My initial finding was that the finance apps were more expensive but upon further 
+investigation I found that the medical apps were more expensive. I did this
+by accounting for outliers. The number right next to the bar graph is the number
+of apps that were part of calculating this statistic.
 
+#### Outliers
+```{r}
+outliers
+```
 
 ### Plot Two
-```{r echo=FALSE, Plot_Two}
+```{r echo= FALSE, message=FALSE, warning=FALSE, Plot_Two}
+temp <- subset(df_size, Type == 'Paid' & Price <100)
 
+#Rating vs. size
+p1<- ggplot(aes(x =Rating , y =Size ), data = df_size)+
+  geom_jitter(alpha = 0.05, color ='royalblue1')+
+  geom_smooth(method = 'lm')+
+  geom_line(stat = 'summary', fun.y = mean  )+
+  ggtitle('Rating vs. Size')
+
+#simple plot of Price*size
+p2<-ggplot(aes(x = Price, y = Size), data = temp)+
+  geom_jitter(alpha = 0.1, color = 'tomato')+
+  geom_smooth(method = 'lm')+
+  xlim(0,100)+
+  coord_cartesian(ylim = c(0,50))+
+  ggtitle('price vs. size')
+
+grid.arrange(p1,p2)
+
+#correlation
+cor.test(temp$Price, temp$Size)
 ```
 
 ### Description Two
-
+out of the paid apps the Larger the size of an application the more expensive
+it is likely to be and more reviews it will have. The correlation coefficient
+for this relationship is below 0.3 so it is not statistically significant and we 
+might have arrived at a positive correlation by chance.
 
 ### Plot Three
-```{r echo=FALSE, Plot_Three}
-
+```{r echo= FALSE, message=FALSE, warning=FALSE, Plot_Three}
+ggplot(aes (x = Genres), data = topgenres)+
+  geom_bar(aes(fill = Category))+
+  coord_flip()+
+  ggtitle('Top genres and Category')
 ```
 
 ### Description Three
+Although there is an enterntinment and education category most apps in the 
+education and entertainment genre are in the family category. This might be
+the preffered category to reach a wider audience.
 
 ------
 
 # Reflection
 
-> **Tip**: Here's the final step! Reflect on the exploration you performed and
-the insights you found. What were some of the struggles that you went through?
-What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
+There was not a lot of correlation between the features in the dataset. This is 
+good news for developers; a good app is a good app no matter the size, no. of
+reviews or even the no. of times the app was installed. Most apps were meant
+to reach the largest audience possible and thus the most frequent
+content rating was "Everyone". Most applications were put in the family category
+although there were other categories which were a better fit for the app.
+One odd thing I found in the dataset is the relationship between reviews and
+installs were it seems as though certain no. of reviews were more frequent for
+an android version, I am unsure why this happens and if anyone were to continue
+with this analysis I hope they shed some light on this.
 
-> **Tip**: Don't forget to remove this, and the other **Tip** sections before
-saving your final work and knitting the final report!

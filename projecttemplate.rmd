@@ -154,6 +154,7 @@ install depending on your device.
 ###Content Rating
 
 ```{r echo= FALSE,message=FALSE, warning=FALSE}
+
 #simple bar plot
 ggplot(aes(x = Content.Rating), data = df)+
   geom_bar(fill = 'royalblue2')+
@@ -295,11 +296,10 @@ all the values share the same unit.
 ###Rating vs. Reviews
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #plot of rating vs reviews
-ggplot(aes(x =Rating, y=Reviews), data = df)+
+ggplot(aes(y =Rating, x=Reviews), data = df)+
   geom_jitter(alpha = 0.06, color = 'royalblue2')+
-  geom_line(stat = 'summary', fun.y = mean)+
   geom_smooth(method = 'lm')+
-  ggtitle('Review vs Rating')
+  ggtitle('Rating vs. Reviews')
 ```
 
 The variability of the rating of an application is not explained by the number 
@@ -325,18 +325,23 @@ app was installed.
 ggplot(aes(x = Rating , y = price), data = df)+
   geom_jitter(alpha = 0.3, color = 'royalblue1')+
   ylim(0,25)+
-  geom_line(stat = 'summary', fun.y = mean)
+  geom_line(stat = 'summary', fun.y = mean)+
+  ggtitle('Rating vs. Price')
 ```
+
 
 Here we see that the mean price is very close to 0 this is because most of the
 apps are free. To get a better understanding of the relationship between rating
-and price we need to filter by type.
+and price we need to filter by type we're going to do this in the multivariate
+section with type as the third variable.
+
 
 ###Rating vs. Type
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #plot for rating vs. type
 ggplot(aes(x = Type, y = Rating), data = df_type )+
-  geom_boxplot(fill = 'violetred2' )
+  geom_boxplot(fill = 'violetred2' )+
+  ggtitle('Rating vs. Type')
 #summary for the paid
 summary(subset(df, Type == 'Paid')$Rating)
 #summary
@@ -345,14 +350,15 @@ summary(subset(df, Type == 'Free')$Rating)
 
 Paid apps are slightly better rated than free apps. 
 
-###Rating and Size
+###Rating vs. Size
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 # Use the df_size dataframe we created in the univariate analysis section
 #to plot the relationship between rating and size
 ggplot(aes(x =Rating , y =Size ), data = df_size)+
-  geom_jitter(alpha = 0.05)+
+  geom_jitter(alpha = 0.05, color ='royalblue1')+
   geom_smooth(method = 'lm')+
-  geom_line(stat = 'summary', fun.y = mean)
+  geom_line(stat = 'summary', fun.y = mean  )+
+  ggtitle('Rating vs. Size')
 
 #correlation between rating and size
 cor.test(df_size$Rating,df_size$Size)
@@ -360,6 +366,8 @@ cor.test(df_size$Rating,df_size$Size)
 
 The size of an application does not affect the rating. Users are not bothered
 by large app sizes.
+
+### Rating vs. Category
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #plot the average rating for each category
@@ -370,50 +378,242 @@ dfcat <- dfcat%>%
 
 #plot
 ggplot(aes(x = Category, y = Rating), data = dfcat)+
-  geom_bar(stat="identity", position="dodge")+
+  geom_bar(stat="identity", fill = 'violetred2')+
   coord_flip(ylim = c(3.8,4.5))
-  
-ggplot(aes(x = Category, y = Rating), data = df)+
-  geom_boxplot()+coord_flip()
+
 ```
 
->Dating apps have the lowest average rating and family apps have the most 
-average rating.
+Dating applications have the lowest average rating while family applications 
+have the most average rating.
 
-
+###Rating vs. Top Genres
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-topgenres1 <- subset(topgenres, !is.na(Rating))
+#remove all the rows that have no rating
+topgenres <- subset(topgenres, !is.na(Rating))
 
-topgenres2 <- topgenres1%>%
+#group the topgenres coulmn
+topgenres_group <- topgenres%>%
   group_by(Genres)%>%
   summarise(Rating = mean(as.numeric(Rating)))
 
-ggplot(aes(x = Genres, y = Rating), data = topgenres2)+
-  geom_bar(stat = 'identity', position = 'dodge')+
-  coord_flip(ylim = c((min(topgenres1$Rating) - 0.1),4.35))
+#barplot of the mean rating for the most frequent genres
+ggplot(aes(x = Genres, y = Rating), data = topgenres_group)+
+  geom_bar(stat = 'identity', position = 'dodge', fill = 'royalblue2')+
+  coord_flip(ylim = c((min(topgenres_group$Rating) - 0.1),4.35))+
+  ggtitle('Rating vs. Top Genres')
 
-ggplot(aes(x = Genres, y = Rating), data = topgenres1)+
-  geom_jitter(alpha = 0.3)+
-  coord_flip()
+#point plot
+ggplot(aes(x = Genres, y = Rating), data = topgenres)+
+  geom_jitter(alpha = 0.3, color = 'royalblue2')+
+  coord_flip()+
+  ggtitle('Rating vs. Top Genres')
 
 ```
 
->When we look at the most popular genres we find that personalization is on 
-averahe the best rated genre followed by education.
+When we look at the most popular genres we find that personalization is on 
+average the best rated genre followed by education.
 
+###Rating vs. Content Rating
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-ggplot(aes(y = Rating, x = Content.Rating), data = df)+
-  geom_jitter(alpha = 0.1, color = 'royalblue1')
+#creating a box plot without the unrated level in content rating
+ggplot(aes(y = Rating, x = Content.Rating),
+       data = subset(df, Content.Rating != 'Unrated'))+
+  geom_boxplot( fill = 'royalblue1')+
+  ggtitle('Rating vs. Content Rating')
 ```
 
-#Price
+Applications with a content rating of mature (17+) have a lower rating.
 
-##The relationship between price and category
+
+
+##The relationship between Genres and Category
+
+let us look at the most frequent Genres and see what Categories makes up each 
+genre
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot of the different categories with different colors as the genres
+ggplot(aes(x = Category), data = df)+
+  geom_bar(aes(fill = Genres))+
+  coord_flip()+
+  theme(legend.position="none")+
+  ggtitle('Genre and Category')
+```
+ 
+ Here we see that the family and game categories are made up of multiple genres.
+ Let us explore this further.
+ 
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#temporary dataframe that will only be used one and has the number of 
+#applications in each genre that make up the Game Category
+temp <- subset(df, Category == 'GAME')%>%
+  group_by(Genres)%>%
+  summarise(n = n())
+
+#plot
+ggplot(aes( x = Genres, y = n), data = temp)+
+  geom_bar(stat = 'identity', fill = 'tomato')+
+  coord_flip()+
+  geom_text(aes(label = n), hjust = -0.1)+
+  ggtitle("Genre in Game Category")+
+  ylab('count')
+```
+ 
+ The most popular Genre in the game Category is action with 365 apps followed
+ by arcade with 220 apps and racing with 98 apps.
+ 
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#temporary dataframe that will only be used one and has the number of 
+#applications in each genre that make up theFamily Category
+
+temp <- subset(df, Category == 'FAMILY')%>%
+  group_by(Genres)%>%
+  summarise(n = n())%>%
+  arrange()
+
+#The top 20 Genres
+temp<- temp[order(temp$n, decreasing = TRUE),]
+temp <- head(temp, 20)
+
+#plot
+ggplot(aes( x = Genres, y = n), data = temp)+
+  geom_bar(stat = 'identity', fill = 'tomato')+
+  coord_flip()+
+  geom_text(aes(label = n), hjust = -0.1)+
+  ggtitle("Genre in Family Category")+
+  ylab('count')
+```
+ 
+ Above are the top 20 genres based on frequency that make up the family 
+ category. The most frequent apps in the family category are entertainment apps 
+ (487) followed by education apps (420) and simulation apps(189).
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot of the topgenres and category
+ggplot(aes (x = Genres), data = topgenres)+
+  geom_bar(aes(fill = Category))+
+  coord_flip()+
+  ggtitle('Top genres and Category')
+```
+
+Here we see that a genre can fall under different categories, for example
+most of the apps in the entertainment genre are in the family category although
+there is an entertainment category. We see the same thing with the education
+genre; most of the apps in the education genre are under the family category
+although there is a category for educational apps.
+
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot of type by category
+ggplot(aes(x= Category), data = df)+
+  geom_bar(aes(fill = Type))+
+  coord_flip()+
+  ggtitle('Category vs. Type')
+
+```
+
+##The relationship between Installs and other Feautures
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#plot of install by category
+ggplot(aes(x = Installs), data = df)+
+  geom_bar(aes(fill = Category))+
+  coord_flip()+
+  theme(legend.position="none")+
+  ggtitle('Installs by Category')
+
+```
+
+It does not seem as though the category affects the number of times an app
+would be installed, I came to this conclusion since it seems that the different
+categories are in pretty much all the 'Installs' levels.
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#Installs vs Type
+ggplot(aes( x= Installs), data = df)+
+  geom_bar(aes(fill = Type))+
+  coord_flip()+
+  ggtitle('Installs vs. Type')
+
+```
+No paid app has been installed more than or equal to 50 million times.
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+#Temporary dataset where we group installs and get summaries
+temp <- df%>%
+  group_by(Installs)%>%
+  summarise(mean = mean(Reviews), median = median(Reviews), max = max(Reviews),
+            n = n())
+
+#Install vs. Reviews
+ggplot(aes(x=Installs, y = Reviews), data = df)+
+  geom_jitter(alpha = 0.05, color = 'violetred2')+
+  coord_flip()+
+  ggtitle('Install vs. Reviews')
+
+#install vs. mean reviews
+ggplot(aes(x = Installs, y = mean), data = temp)+
+  geom_bar(stat = 'identity', fill = 'royalblue2')+
+  coord_flip()+
+  geom_text(aes(label = n), hjust = -0.1)+
+  ggtitle('Installs vs mean no. of Reviews')+
+  ylab('mean reviews')
+
+```
+
+When we look at the 5+,10+,50+,100+,500+ levels in the point plot abover there 
+are a certain number of reviews that are more frequent. I then created a bar
+plot to see the mean number of reviews for each level. 500+ which I assume to be
+a level assigned to all applications that are installed between 500 times up 
+until the next level have more reviews than the times they have been installed.
+
+##The relationship between category and content rating
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = Category), data = df)+
+  geom_bar(aes(fill = Content.Rating))+
+  coord_flip()+
+  scale_y_log10()+
+  ggtitle('category vs content rating')
+
+```
+
+The only apps that have a conent rating of Adult only are in the comics 
+category. The Dating Category has the most apps with acontent rating of mature.
+Every category has more than one application that has a content rating of 
+Everyone.
+
+
+# Bivariate Analysis
+
+In my bivariate analysis I found that the rating of an application is not 
+strongly coorelated to any feature in the dataset. I am going to have to work
+on the price in the multivarite section in order to inclue type.
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+-Paid apps are better rated than free apps.
+-
+
+### Did you observe any interesting relationships between the other features \
+
+The Family and games categories have different genres.
+
+### What was the strongest relationship you found?
+
+All the relationships between quantitative variables were pretty weak. (<0.3)
+
+# Multivariate Plots Section
+
+##The relationship between price and Type with other Features
+
+```{r echo= FALSE, message=FALSE, warning=FALSE}
+
 paidapp = subset(df, Type == 'Paid')
 
-ggplot(aes(x =Category , y =price ), data = paidapp)+
+ggplot(aes(x =Category , y =price ), data = df)+
   geom_point(alpha = 0.2, color = 'royalblue1')+
   coord_flip(ylim = c(0, quantile(paidapp$price,0.95)))
 
@@ -489,93 +689,41 @@ that app has only been installed between 1-5 times. If we were to visually
 inspect the point plot we would see that on average the medical apps are 
 actually more expensive on average.
 
-##The relationship between Genres and Category
-
-let us look at the most frequent Genres and see what Categories makes up each 
-genre
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
-temp <- df[df$Category %in% topgenres$Category,]
 
-ggplot(aes(x = Category), data = df)+
-  geom_bar(aes(fill = Genres))+
+ggplot(aes(x = Installs, y = price), data = subset(df, Type == 'Paid') )+
+  geom_jitter(alpha = 0.1)+
   coord_flip()+
-  theme(legend.position="none")
-
-```
- 
- Here we see that the family and game categories are made up of multiple genres.
- Let us explore this further.
- 
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-temp <- subset(df, Category == 'GAME')%>%
-  group_by(Genres)%>%
-  summarise(n = n())
-
-ggplot(aes( x = Genres, y = n), data = temp)+
-  geom_bar(stat = 'identity', fill = 'tomato')+
-  coord_flip()+
-  geom_text(aes(label = n), hjust = -0.1)
-```
- 
- The most popular Genre in the game Category is action with 365 apps followed
- by arcade with 220 apps and racing with 98 apps.
- 
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-temp <- subset(df, Category == 'FAMILY')%>%
-  group_by(Genres)%>%
-  summarise(n = n())%>%
-  arrange()
-
-temp<- temp[order(temp$n, decreasing = TRUE),]
-
-temp <- head(temp, 20)
-
-ggplot(aes( x = Genres, y = n), data = temp)+
-  geom_bar(stat = 'identity', fill = 'tomato')+
-  coord_flip()+
-  geom_text(aes(label = n), hjust = -0.1)
-```
- 
- Above are the top 20 genres based on frequency that make up the family 
- category. The most frequent apps in the family category are entertainment apps 
- (487) followed by education apps (420) and simulation apps(189).
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-ggplot(aes (x = Genres), data = topgenres)+
-  geom_bar(aes(fill = Category))+
-  coord_flip()
-```
-
-Here we see that a genre can fall under different categories, for example
-most of the apps in the entertainment genre are in the family category although
-there is an entertainment category. We see the same thing with the education
-genre; most of the apps in the education genre are under the family category
-although there is a category for educational apps.
-
-##The relationship between Category and type
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes(x= Category), data = df)+
-  geom_bar(aes(fill = Type))+
-  coord_flip()
+  ggtitle('Installs vs. Type')
 
 ```
 
 
-##The relationship between the most frequent Genres and price
+The cheaper the app the more likely it will be downloaded and installed.
+
+
+```{r echo=FALSE, Multivariate_Plots}
+
+ggplot(aes(x = Reviews, y = price), data = subset(df, Type = 'Paid'))+
+  geom_jitter(aes(color = Android.Ver))+
+  theme(legend.position = 'None')+
+  ylim(0,50)
+
+```
+
+
+##The relationship between price and other features
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 ggplot(aes(x= Genres, y = price), data = subset(topgenres, Type =='Paid'))+
-  geom_jitter(stat = 'identity', alpha = 0.5, color = 'slateblue1')+
+  geom_jitter(stat = 'identity', alpha = 0.5, aes(color = Reviews))+
   coord_flip(ylim = c(0,50))
 ```
 
 Here we see that the most expensive apps are in the medical genre we also see 
 that most of the tools are under 10$.
 
-##The relationship between price and other features
 
 ```{r echo= FALSE, message=FALSE, warning=FALSE}
 #simple plot of price*size
@@ -601,114 +749,7 @@ ggplot(aes(x = Reviews, y = price), data = subset(df, Type == 'Paid'))+
 cor.test(df$Reviews, df$price)
 ```
 
-##The relationship between Installs and other Feautures
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes(x = Installs, y = price), data = subset(df, Type == 'Paid') )+
-  geom_jitter(alpha = 0.1)+
-  coord_flip()
-
-```
-
-The cheaper the app the more likely it will be downloaded and installed.
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes(x = Installs), data = df)+
-  geom_bar(aes(fill = Category))+
-  coord_flip()+
-  theme(legend.position="none")
-
-```
-
-It does not seem as though the category affects the number of times an app
-would be installed, I came to this conclusion since it seems that the different
-categories are in pretty much all the 'Installs' levels.
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes( x= Installs), data = df)+
-  geom_bar(aes(fill = Type))+
-  coord_flip()
-
-```
-No paid app has been installed more than or equal to 50 million times.
-
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-temp <- df%>%
-  group_by(Installs)%>%
-  summarise(mean = mean(Reviews), median = median(Reviews), max = max(Reviews),
-            n = n())
-
-ggplot(aes(x=Installs, y = Reviews), data = df)+
-  geom_jitter(alpha = 0.05)+
-  coord_flip()
-
-ggplot(aes(x = Installs, y = mean), data = temp)+
-  geom_bar(stat = 'identity')+
-  coord_flip()+
-  geom_text(aes(label = n), hjust = -0.1)
-
-```
-
-When we look at the 5+,10+,50+,100+,500+ levels in the point plot abover there 
-are a certain number of reviews that are more frequent. I then created a bar
-plot to see the mean number of reviews for each level. 500+ which I assume to be
-a level assigned to all applications that are installed between 500 times up until
-the next level have more reviews than the times they have been installed.
-
-##The relationship between category and content rating
-```{r echo= FALSE, message=FALSE, warning=FALSE}
-
-ggplot(aes(x = Category), data = df)+
-  geom_bar(aes(fill = Content.Rating))+
-  coord_flip()+
-  scale_y_log10()
-
-```
-
-The only apps that have a conent rating of Adult only are in the comics 
-category. The Dating Category has the most apps with acontent rating of mature.
-Every category has more than one application that has a content rating of 
-Everyone.
-
-
-# Bivariate Analysis
-
-> **Tip**: As before, summarize what you found in your bivariate explorations
-here. Use the questions below to guide your discussion.
-
-### Talk about some of the relationships you observed in this part of the \
-investigation. How did the feature(s) of interest vary with other features in \
-the dataset?
-
-### Did you observe any interesting relationships between the other features \
-(not the main feature(s) of interest)?
-
-### What was the strongest relationship you found?
-
-
-# Multivariate Plots Section
-
-> **Tip**: Now it's time to put everything together. Based on what you found in
-the bivariate plots section, create a few multivariate plots to investigate
-more complex interactions between variables. Make sure that the plots that you
-create here are justified by the plots you explored in the previous section. If
-you plan on creating any mathematical models, this is the section where you
-will do that.
-
-```{r echo=FALSE, Multivariate_Plots}
-
-ggplot(aes(x = Reviews, y = price), data = subset(df, Type = 'Paid'))+
-  geom_jitter(aes(color = Android.Ver))+
-  theme(legend.position = 'None')+
-  ylim(0,50)
-
-```
-
 # Multivariate Analysis
-
 
 
 ### Talk about some of the relationships you observed in this part of the \
